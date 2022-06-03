@@ -15,18 +15,8 @@
 #       by replacing part of the number (not necessarily adjacent digits) with the same digit,
 #       is part of an eight prime value family.
 
-
-
-# ============ UNFINISHED =============== #
-#
-#   Does not account for partial replacement of digits.
-#   For example in 112234,
-#     would only consider 11**34
-#     and not 112*34 or 11*234.
-
-
-
 from collections import defaultdict
+from itertools import product
 from math import floor, sqrt
 
 # Global variables to keep track of primes as they are found
@@ -105,71 +95,78 @@ def main(n):
     #
     #     Within that range, find all the primes.
     #     For each prime encountered,
-    #       keep track of what digit-families it fits into (max of 10 such families),
+    #       keep track of what digit-families it fits into,
     #       and also the sizes of those families.
     #
-    #     After finding all primes of `d` digits,
-    #       and relevant digit-families,
-    #       check for any families having at least `n` members.
+    #     Whenever a digit-family obtains `n` members,
+    #       compare it against any previously seen family
+    #       by their least elements.
 
     d = 0  # Size of numbers in consideration (as count of their digits)
     x = 2  # Numbers to prime-check
     while True:
         d += 1
-        print('Checking {}-digit numbers...'.format(d))
         digit_families = defaultdict(lambda: [])
 
         # Find all the primes having `d` digits, and keep track of their families
         member_least = t_least = None
         while x < 10 ** d:
-            if x % 10**(d-1) == 0:
-                print('    {} ...'.format(x))
-            if (x - 121313) % 101010 == 0:
-                print('    Checking {}'.format(x))
             if is_prime(x):
-                if (x - 121313) % 101010 == 0:
-                    print('    Prime!')
-                # Add the prime to any of the 10 relevant digit families
+                # Count digits and occurrences in `x`,
+                #   to figure out which digit-families contain `x`
                 xs = str(x)
-                digits = set(xs)
-                if (x - 121313) % 101010 == 0:
-                    print('    Digits are {}'.format(digits))
+                digit_counts = defaultdict(lambda: 0)
+                for c in xs:
+                    digit_counts[c] += 1
 
-                # Quick optimization to ignore families which must end in even digit
-                if n > 5:
-                    if (x - 121313) % 101010 == 0:
-                        print('    Excluding {}'.format(xs[-1]))
-                    digits.remove(xs[-1])
+                # Add the prime to any of the 10 relevant digit families
+                # Figure out templates of digit-families by considering each digit in the number
+                for digit, count in digit_counts.items():
+                    # Optimization to avoid families where 'ones' digit is wild card,
+                    #   since primes only end in 1, 3, 7, and 9 above 10
+                    skip_ones = (n > 4 and xs[-1] == digit)
+                    count = count-1 if skip_ones else count  # Don't consider the 'ones' digit to be replaceable
 
-                for digit in digits:
-                    # Quick optimization due to pigeonholing with multiples of 3
-                    if n > 7 and xs.count(digit) % 3 != 0:
-                        continue
+                    # Iterate through which of the occurrences of `digit` to be replaceable ('empty')
+                    for empties in product([False, True], repeat=count):
+                        # Optimization to avoid some families, due to pigeonholing with multiples of 3
+                        if n > 7 and sum(empties) % 3 != 0:
+                            continue
 
-                    xt = xs.replace(digit, '_')
-                    if (x - 121313) % 101010 == 0:
-                        print('    Adding template "{}"'.format(xt))
-                    digit_families[xt].append(x)
-                    if (x - 121313) % 101010 == 0:
-                        print('    Current members = {}'.format(digit_families[xt]))
-                    if len(digit_families[xt]) == n:
-                        print('    "{}" has {} members!'.format(xt, n))
-                        if member_least is None or digit_families[xt][0] < member_least:
-                            member_least = digit_families[xt][0]
-                            t_least = xt
+                        empties = list(empties)
+                        if skip_ones:
+                            empties.insert(0, False)
+
+                        # Create the relevant template
+                        xt = list(xs)
+                        for i, c in enumerate(xt):
+                            if c == digit and empties.pop():  # Popping from back, but doesn't really matter
+                                xt[i] = '_'
+                            else:
+                                continue
+                        xt = ''.join(xt)
+
+                        # Add `x` to the digit-family defined by template `xt`
+                        digit_families[xt].append(x)
+
+                        # Check if this digit-family should be considered,
+                        #   and compare with previous,
+                        #   based on the least element of the families.
+                        if len(digit_families[xt]) == n:
+                            if member_least is None or digit_families[xt][0] < member_least:
+                                member_least = digit_families[xt][0]
+                                t_least = xt
                     else:
                         continue
             else:
                 pass
             x += 1
 
-        print('  Checking for family...')
         if t_least is not None:
             # Found at least one family having at least `n` members
             # Return such digit-family having the least member
             return t_least, digit_families[t_least]
         else:
-            print('  No sufficient families found... continuing')
             # No families had at least `n` members, so continue
             continue
 
