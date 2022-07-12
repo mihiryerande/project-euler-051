@@ -18,6 +18,7 @@
 from collections import defaultdict
 from itertools import product
 from math import floor, sqrt
+from typing import List, Tuple
 
 # Global variables to keep track of primes as they are found
 PRIME_LIST = []
@@ -25,7 +26,7 @@ PRIME_SET = set()
 HIGHEST_CHECKED = 1
 
 
-def is_prime(x):
+def is_prime(x: int) -> bool:
     """
     Returns True iff `x` is prime.
     Keeps track of known primes up to highest `x` ever given to function, to avoid redundant calls.
@@ -36,7 +37,7 @@ def is_prime(x):
         x (int): Integer
 
     Returns:
-        True iff `x` is prime
+        (bool): True iff `x` is prime
     """
     global PRIME_LIST
     global PRIME_SET
@@ -65,7 +66,7 @@ def is_prime(x):
         return x in PRIME_SET
 
 
-def main(n):
+def main(n: int) -> Tuple[str, List[int]]:
     """
     Returns the first digit-family
       (set of natural numbers all matching a digit-template),
@@ -76,7 +77,7 @@ def main(n):
         n (int): Natural number in range [2, 10]
 
     Returns:
-        (str, List[int]):
+        (Tuple[str, List[int]]):
             Tuple of ...
               * String template for the digit-family
               * Prime members of the digit-family, as an ordered list
